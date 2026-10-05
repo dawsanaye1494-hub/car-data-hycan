@@ -12,8 +12,8 @@ export default function TripMap({ fixes, cursor }: { fixes: GpsFix[]; cursor: Gp
   useEffect(() => {
     if (!el.current || map.current) return;
     map.current = L.map(el.current, { zoomControl: true }).setView([16.82, 96.18], 13);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      attribution: "© OpenStreetMap © CARTO",
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
     }).addTo(map.current);
     layer.current = L.layerGroup().addTo(map.current);
     return () => {
