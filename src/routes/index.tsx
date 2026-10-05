@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AiInsights } from "@/components/AiInsights";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -91,6 +91,7 @@ function Index() {
           <p className="text-sm text-muted-foreground">Trip map & timeline from your head unit logs</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" asChild><Link to="/live">Live</Link></Button>
           <Button variant="secondary" onClick={loadSamples} disabled={loading}>Load my GAC logs</Button>
           <Button asChild>
             <label className="cursor-pointer">
