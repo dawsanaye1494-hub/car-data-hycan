@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AiInsights } from "@/components/AiInsights";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Upload, MapPin, Gauge, Navigation, Clock, FileText } from "lucide-react";
@@ -184,6 +185,7 @@ function Index() {
               </LineChart>
             </ChartCard>
           </div>
+          {stats && <AiInsights log={log} stats={stats} />}
         </main>
       )}
     </div>
