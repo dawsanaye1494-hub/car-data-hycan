@@ -1,10 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts";
-import { Radio, Play, Square, Download } from "lucide-react";
+import { Radio, Play, Square, Download, Save, Trash2, Lightbulb } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Toaster } from "@/components/ui/sonner";
 import { parseLog, type GpsFix, type SpeedSample, type SteerSample, type LogEvent } from "@/lib/logParser";
+import { drivingScore } from "@/lib/drivingScore";
+import { listTrips, saveTrip, deleteTrip, type SavedTrip } from "@/lib/savedTrips";
 
 const TripMap = lazy(() => import("@/components/TripMap"));
 
@@ -62,16 +66,51 @@ function Live() {
 
   useEffect(() => () => stop.current(), []);
 
+  // Saved trips (stored on this device)
+  const [trips, setTrips] = useState<SavedTrip[]>([]);
+  const [replaying, setReplaying] = useState<string | null>(null);
+  useEffect(() => setTrips(listTrips()), []);
+  const fullTrip = useRef<{ fixes: GpsFix[]; speeds: SpeedSample[]; steering: SteerSample[]; events: LogEvent[] }>({ fixes: [], speeds: [], steering: [], events: [] });
+  // accumulate everything during a live session (not capped) for saving
+  useEffect(() => { if (status === "live") fullTrip.current = { fixes, speeds, steering: steer, events }; }, [status, fixes, speeds, steer, events]);
+
+  const onSave = () => {
+    const d = fullTrip.current.fixes.length || fullTrip.current.speeds.length || fullTrip.current.steering.length ? fullTrip.current : { fixes, speeds, steering: steer, events };
+    if (!d.fixes.length && !d.speeds.length && !d.steering.length) { toast.error("Nothing to save yet"); return; }
+    saveTrip({ name: `Trip ${new Date().toLocaleString()}`, ...d });
+    setTrips(listTrips());
+    toast.success("Trip saved");
+  };
+
+  const replay = (trip: SavedTrip) => {
+    stop.current(); reset(); setReplaying(trip.id);
+    const all = [...trip.fixes, ...trip.speeds, ...trip.steering].map((x) => x.t);
+    if (!all.length) return;
+    const t0 = Math.min(...all), t1 = Math.max(...all);
+    let clock = t0;
+    const id = setInterval(() => {
+      clock += 2000; // 8x speed (2s of driving every 250ms)
+      setFixes(trip.fixes.filter((f) => f.t <= clock).slice(-MAX));
+      setSpeeds(trip.speeds.filter((f) => f.t <= clock).slice(-MAX));
+      setSteer(trip.steering.filter((f) => f.t <= clock).slice(-MAX));
+      setEvents(trip.events.filter((f) => f.t <= clock).slice(0, 100));
+      if (clock >= t1) { clearInterval(id); setReplaying(null); }
+    }, 250);
+    stop.current = () => { clearInterval(id); setReplaying(null); setStatus("idle"); };
+  };
+
   const last = fixes[fixes.length - 1] ?? null;
   const speedNow = speeds[speeds.length - 1]?.kmh ?? last?.speedKmh ?? 0;
   const steerNow = steer[steer.length - 1];
   const steerDeg = steerNow ? (steerNow.direction ? steerNow.angle : -steerNow.angle) : 0;
   const steerData = useMemo(() => steer.map((s) => ({ t: s.t, a: s.direction ? s.angle : -s.angle })), [steer]);
   const speedData = useMemo(() => (speeds.length ? speeds : fixes.map((f) => ({ t: f.t, kmh: f.speedKmh }))), [speeds, fixes]);
-  const running = status !== "idle" && status !== "error";
+  const score = useMemo(() => drivingScore(speedData as SpeedSample[], steer), [speedData, steer]);
+  const running = (status !== "idle" && status !== "error") || !!replaying;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Toaster />
       <header className="border-b border-border px-6 py-4 flex flex-wrap items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
           <div>
@@ -90,6 +129,8 @@ function Live() {
           ) : (
             <Button onClick={connect}><Play className="h-4 w-4" /> Connect</Button>
           )}
+          <Button variant="outline" onClick={onSave} disabled={!!replaying}><Save className="h-4 w-4" /> Save trip</Button>
+          {replaying && <span className="text-sm text-primary">Replaying saved trip…</span>}
           <a href="/bridge/headunit-bridge.mjs" download className="ml-auto text-sm text-primary inline-flex items-center gap-1"><Download className="h-4 w-4" /> Bridge script</a>
         </div>
 
@@ -98,6 +139,19 @@ function Live() {
           <Big label="Steering" value={`${steerDeg}`} unit="°" />
           <Big label="Position" value={last ? `${last.lat.toFixed(4)}, ${last.lon.toFixed(4)}` : "—"} unit="" small />
           <Big label="Last update" value={last || steerNow ? fmt(Math.max(last?.t ?? 0, steerNow?.t ?? 0)) : "—"} unit="" small />
+        </div>
+
+        <div className="rounded-lg border border-border bg-card p-4 grid md:grid-cols-[auto_1fr] gap-6 items-center">
+          <div className="text-center">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">Driving score</div>
+            <div className={`text-6xl font-bold tabular-nums ${score.total >= 80 ? "text-primary" : score.total >= 60 ? "text-foreground" : "text-destructive"}`}>{score.total}</div>
+            <div className="flex gap-3 text-xs text-muted-foreground mt-2">
+              <span>Speed {score.speed}</span><span>Steering {score.steering}</span><span>Accel {score.accel}</span>
+            </div>
+          </div>
+          <ul className="space-y-1 text-sm">
+            {score.tips.map((t) => <li key={t} className="flex gap-2"><Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />{t}</li>)}
+          </ul>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-4">
@@ -119,6 +173,26 @@ function Live() {
         <div className="grid md:grid-cols-2 gap-4">
           <Chart title="Speed (km/h)" data={speedData} k="kmh" color="var(--chart-1)" />
           <Chart title="Steering angle (°)" data={steerData} k="a" color="var(--chart-2)" />
+        </div>
+
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h3 className="font-semibold mb-3">Saved trips</h3>
+          {trips.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No saved trips yet. Press "Save trip" after driving.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {trips.map((t) => {
+                const s = drivingScore(t.speeds.length ? t.speeds : t.fixes.map((f) => ({ t: f.t, kmh: f.speedKmh })), t.steering);
+                return (
+                  <li key={t.id} className="flex items-center gap-2 py-2 text-sm">
+                    <span className="flex-1">{t.name} <span className="text-muted-foreground">· score {s.total}</span></span>
+                    <Button size="sm" variant="secondary" onClick={() => replay(t)}><Play className="h-4 w-4" /> Replay</Button>
+                    <Button size="sm" variant="ghost" aria-label="Delete trip" onClick={() => { deleteTrip(t.id); setTrips(listTrips()); }}><Trash2 className="h-4 w-4" /></Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4">
