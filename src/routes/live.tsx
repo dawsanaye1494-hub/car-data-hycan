@@ -60,21 +60,6 @@ function Live() {
     stop.current = () => { es.close(); setStatus("idle"); };
   };
 
-  const demo = async () => {
-    stop.current();
-    reset();
-    setStatus("demo");
-    const text = await (await fetch("/samples/GAC_G6SA-r8a7796.20260812201.txt")).text();
-    const all = text.split("\n").filter((l) => /reportLocation|SdvcService: gain is|setSteeWheel angle/.test(l));
-    let i = 0;
-    const id = setInterval(() => {
-      if (i >= all.length) i = 0;
-      ingest(all.slice(i, i + 4));
-      i += 4;
-    }, 300);
-    stop.current = () => { clearInterval(id); setStatus("idle"); };
-  };
-
   useEffect(() => () => stop.current(), []);
 
   const last = fixes[fixes.length - 1] ?? null;
@@ -89,7 +74,6 @@ function Live() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border px-6 py-4 flex flex-wrap items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-5 w-5" /></Link>
           <div>
             <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2"><Radio className="h-5 w-5 text-primary" /> Live head unit</h1>
             <p className="text-sm text-muted-foreground">Real-time data from your Hycan / GAC head unit</p>
