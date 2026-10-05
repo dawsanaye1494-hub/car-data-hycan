@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts";
-import { Radio, Play, Square, Download, ArrowLeft } from "lucide-react";
+import { Radio, Play, Square, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { parseLog, type GpsFix, type SpeedSample, type SteerSample, type LogEvent } from "@/lib/logParser";
@@ -27,7 +27,7 @@ const fmt = (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit",
 
 function Live() {
   const [url, setUrl] = useState("http://localhost:8765/stream");
-  const [status, setStatus] = useState<"idle" | "connecting" | "live" | "demo" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
   const [fixes, setFixes] = useState<GpsFix[]>([]);
   const [speeds, setSpeeds] = useState<SpeedSample[]>([]);
   const [steer, setSteer] = useState<SteerSample[]>([]);
@@ -136,8 +136,8 @@ function Live() {
 }
 
 function StatusPill({ status, lines }: { status: string; lines: number }) {
-  const label = { idle: "Not connected", connecting: "Connecting…", live: "Live", demo: "Demo replay", error: "Can't reach bridge" }[status];
-  const dot = status === "live" || status === "demo" ? "bg-primary animate-pulse" : status === "error" ? "bg-destructive" : "bg-muted-foreground";
+  const label = { idle: "Not connected", connecting: "Connecting…", live: "Live", error: "Can't reach bridge" }[status];
+  const dot = status === "live" ? "bg-primary animate-pulse" : status === "error" ? "bg-destructive" : "bg-muted-foreground";
   return (
     <div className="flex items-center gap-2 text-sm rounded-full border border-border px-3 py-1">
       <span className={`h-2 w-2 rounded-full ${dot}`} /> {label} <span className="text-muted-foreground">· {lines} lines</span>
