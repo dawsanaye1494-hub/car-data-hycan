@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts";
-import { Radio, Play, Square, Download, ArrowLeft } from "lucide-react";
+import { Radio, Play, Square, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { parseLog, type GpsFix, type SpeedSample, type SteerSample, type LogEvent } from "@/lib/logParser";
@@ -27,7 +27,7 @@ const fmt = (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit",
 
 function Live() {
   const [url, setUrl] = useState("http://localhost:8765/stream");
-  const [status, setStatus] = useState<"idle" | "connecting" | "live" | "demo" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
   const [fixes, setFixes] = useState<GpsFix[]>([]);
   const [speeds, setSpeeds] = useState<SpeedSample[]>([]);
   const [steer, setSteer] = useState<SteerSample[]>([]);
@@ -60,21 +60,6 @@ function Live() {
     stop.current = () => { es.close(); setStatus("idle"); };
   };
 
-  const demo = async () => {
-    stop.current();
-    reset();
-    setStatus("demo");
-    const text = await (await fetch("/samples/GAC_G6SA-r8a7796.20260812201.txt")).text();
-    const all = text.split("\n").filter((l) => /reportLocation|SdvcService: gain is|setSteeWheel angle/.test(l));
-    let i = 0;
-    const id = setInterval(() => {
-      if (i >= all.length) i = 0;
-      ingest(all.slice(i, i + 4));
-      i += 4;
-    }, 300);
-    stop.current = () => { clearInterval(id); setStatus("idle"); };
-  };
-
   useEffect(() => () => stop.current(), []);
 
   const last = fixes[fixes.length - 1] ?? null;
@@ -89,7 +74,6 @@ function Live() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border px-6 py-4 flex flex-wrap items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-5 w-5" /></Link>
           <div>
             <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2"><Radio className="h-5 w-5 text-primary" /> Live head unit</h1>
             <p className="text-sm text-muted-foreground">Real-time data from your Hycan / GAC head unit</p>
@@ -104,10 +88,7 @@ function Live() {
           {running ? (
             <Button variant="secondary" onClick={() => stop.current()}><Square className="h-4 w-4" /> Stop</Button>
           ) : (
-            <>
-              <Button onClick={connect}><Play className="h-4 w-4" /> Connect</Button>
-              <Button variant="secondary" onClick={demo}>Try demo replay</Button>
-            </>
+            <Button onClick={connect}><Play className="h-4 w-4" /> Connect</Button>
           )}
           <a href="/bridge/headunit-bridge.mjs" download className="ml-auto text-sm text-primary inline-flex items-center gap-1"><Download className="h-4 w-4" /> Bridge script</a>
         </div>
@@ -155,8 +136,8 @@ function Live() {
 }
 
 function StatusPill({ status, lines }: { status: string; lines: number }) {
-  const label = { idle: "Not connected", connecting: "Connecting…", live: "Live", demo: "Demo replay", error: "Can't reach bridge" }[status];
-  const dot = status === "live" || status === "demo" ? "bg-primary animate-pulse" : status === "error" ? "bg-destructive" : "bg-muted-foreground";
+  const label = { idle: "Not connected", connecting: "Connecting…", live: "Live", error: "Can't reach bridge" }[status];
+  const dot = status === "live" ? "bg-primary animate-pulse" : status === "error" ? "bg-destructive" : "bg-muted-foreground";
   return (
     <div className="flex items-center gap-2 text-sm rounded-full border border-border px-3 py-1">
       <span className={`h-2 w-2 rounded-full ${dot}`} /> {label} <span className="text-muted-foreground">· {lines} lines</span>
