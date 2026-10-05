@@ -88,10 +88,7 @@ function Live() {
           {running ? (
             <Button variant="secondary" onClick={() => stop.current()}><Square className="h-4 w-4" /> Stop</Button>
           ) : (
-            <>
-              <Button onClick={connect}><Play className="h-4 w-4" /> Connect</Button>
-              <Button variant="secondary" onClick={demo}>Try demo replay</Button>
-            </>
+            <Button onClick={connect}><Play className="h-4 w-4" /> Connect</Button>
           )}
           <a href="/bridge/headunit-bridge.mjs" download className="ml-auto text-sm text-primary inline-flex items-center gap-1"><Download className="h-4 w-4" /> Bridge script</a>
         </div>
