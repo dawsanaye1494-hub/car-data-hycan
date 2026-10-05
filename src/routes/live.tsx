@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { parseLog, type GpsFix, type SpeedSample, type SteerSample, type LogEvent } from "@/lib/logParser";
 import { drivingScore } from "@/lib/drivingScore";
 import { listTrips, saveTrip, deleteTrip, type SavedTrip } from "@/lib/savedTrips";
+import { hasNativeLogcat, startNative } from "@/lib/nativeLogcat";
 
 const TripMap = lazy(() => import("@/components/TripMap"));
 
@@ -62,6 +63,29 @@ function Live() {
     es.onmessage = (e) => { try { ingest(JSON.parse(e.data)); } catch { /* ignore */ } };
     es.onerror = () => setStatus(es.readyState === EventSource.CLOSED ? "error" : "connecting");
     stop.current = () => { es.close(); setStatus("idle"); };
+  };
+
+  const [native, setNative] = useState(false);
+  useEffect(() => {
+    const ok = hasNativeLogcat();
+    setNative(ok);
+    if (ok) void connectNative();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const connectNative = async () => {
+    stop.current();
+    reset();
+    setStatus("connecting");
+    try {
+      const h = await startNative(ingest, (m) => { toast.error(m); setStatus("error"); });
+      setStatus("live");
+      toast.success(h.mode === "root" ? "Reading car data (root)" : "Reading car data");
+      stop.current = () => { h.stop(); setStatus("idle"); };
+    } catch (e) {
+      setStatus("error");
+      toast.error(e instanceof Error ? e.message : "Could not read car data");
+    }
   };
 
   useEffect(() => () => stop.current(), []);
@@ -123,9 +147,11 @@ function Live() {
 
       <main className="p-4 md:p-6 space-y-4">
         <div className="rounded-lg border border-border bg-card p-4 flex flex-wrap gap-2 items-center">
-          <Input value={url} onChange={(e) => setUrl(e.target.value)} className="max-w-sm" aria-label="Bridge address" />
+          {!native && <Input value={url} onChange={(e) => setUrl(e.target.value)} className="max-w-sm" aria-label="Bridge address" />}
           {running ? (
             <Button variant="secondary" onClick={() => stop.current()}><Square className="h-4 w-4" /> Stop</Button>
+          ) : native ? (
+            <Button onClick={connectNative}><Play className="h-4 w-4" /> Read from car</Button>
           ) : (
             <Button onClick={connect}><Play className="h-4 w-4" /> Connect</Button>
           )}
