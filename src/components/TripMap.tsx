@@ -28,8 +28,8 @@ export default function TripMap({ fixes, cursor }: { fixes: GpsFix[]; cursor: Gp
     if (!fixes.length) return;
     const pts = fixes.map((f) => [f.lat, f.lon] as [number, number]);
     L.polyline(pts, { color: "#f5b335", weight: 4 }).addTo(layer.current);
-    L.circleMarker(pts[0], { radius: 7, color: "#22c55e", fillOpacity: 1 }).bindTooltip("Start").addTo(layer.current);
-    L.circleMarker(pts[pts.length - 1], { radius: 7, color: "#ef4444", fillOpacity: 1 }).bindTooltip("End").addTo(layer.current);
+    L.circleMarker(pts[0]!, { radius: 7, color: "#22c55e", fillOpacity: 1 }).bindTooltip("Start").addTo(layer.current);
+    L.circleMarker(pts[pts.length - 1]!, { radius: 7, color: "#ef4444", fillOpacity: 1 }).bindTooltip("End").addTo(layer.current);
     const b = L.latLngBounds(pts);
     map.current.fitBounds(b.pad(0.3), { maxZoom: 17 });
   }, [fixes]);

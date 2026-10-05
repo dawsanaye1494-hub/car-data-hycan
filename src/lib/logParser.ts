@@ -29,19 +29,19 @@ export function parseLog(text: string, fileName: string): ParsedLog {
   for (const line of text.split("\n")) {
     const ts = LINE_TS.exec(line) as string[] | null;
     if (!ts) continue;
-    const t = new Date(year, +ts[1] - 1, +ts[2], +ts[3], +ts[4], +ts[5], +ts[6]).getTime();
+    const t = new Date(year, Number(ts[1]) - 1, Number(ts[2]), Number(ts[3]), Number(ts[4]), Number(ts[5]), Number(ts[6])).getTime();
 
     if (line.includes("reportLocation Location[gps")) {
       const m = line.match(/gps ([\d.-]+),([\d.-]+).*?alt=([\d.-]+) vel=([\d.eE-]+) bear=([\d.-]+)/) as string[] | null;
       if (m) {
-        fixes.push({ t, lat: +m[1], lon: +m[2], alt: +m[3], speedKmh: +m[4] * 3.6, bearing: +m[5] });
+        fixes.push({ t, lat: Number(m[1]), lon: Number(m[2]), alt: Number(m[3]), speedKmh: Number(m[4]) * 3.6, bearing: Number(m[5]) });
       }
       continue;
     }
     if (line.includes("SdvcService: gain is")) {
       const m = line.match(/speed ([\d.]+)km\/h/) as string[] | null;
       if (m) {
-        const kmh = +m[1];
+        const kmh = Number(m[1]);
         if (kmh !== lastSpeed || speeds.length === 0 || t - speeds[speeds.length - 1]!.t > 5000) {
           speeds.push({ t, kmh });
           lastSpeed = kmh;
@@ -51,7 +51,7 @@ export function parseLog(text: string, fileName: string): ParsedLog {
     }
     if (line.includes("setSteeWheel angle =")) {
       const m = line.match(/angle = (-?\d+)\s+angleDirection = (-?\d+)\s+speed = (-?\d+)/) as string[] | null;
-      if (m) steering.push({ t, angle: +m[1], direction: +m[2], speed: +m[3] });
+      if (m) steering.push({ t, angle: Number(m[1]), direction: Number(m[2]), speed: Number(m[3]) });
       continue;
     }
     if (/reverse|RvcVehicle.*gear/i.test(line) && /gear|reverse/i.test(line)) {
