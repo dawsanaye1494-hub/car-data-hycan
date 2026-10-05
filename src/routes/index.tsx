@@ -184,6 +184,7 @@ function Index() {
               </LineChart>
             </ChartCard>
           </div>
+          {stats && <AiInsights log={log} stats={stats} />}
         </main>
       )}
     </div>
