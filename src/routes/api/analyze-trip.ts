@@ -29,8 +29,7 @@ export const Route = createFileRoute("/api/analyze-trip")({
           request,
           { baseURL: "https://ai.gateway.lovable.dev/v1", apiKey, model: "openai/gpt-6-astra" },
           [
-            { role: "system", content: SYSTEM },
-            { role: "user", content: `Trip data:\n${summary}` },
+            { role: "user", content: `${SYSTEM}\n\nTrip data:\n${summary}` },
           ],
         );
         return call.result.toTextStreamResponse();
