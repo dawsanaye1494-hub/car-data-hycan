@@ -34,6 +34,8 @@ function Live() {
   const [events, setEvents] = useState<LogEvent[]>([]);
   const [lines, setLines] = useState(0);
   const stop = useRef<() => void>(() => {});
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const ingest = (batch: string[]) => {
     const name = `live.${new Date().getFullYear()}0101.txt`;
@@ -120,7 +122,7 @@ function Live() {
         <div className="grid lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 h-[380px] rounded-lg border border-border bg-card overflow-hidden">
             <Suspense fallback={<div className="p-6 text-muted-foreground">Loading map…</div>}>
-              <TripMap fixes={fixes} cursor={last} />
+              {mounted && <TripMap fixes={fixes} cursor={last} />}
             </Suspense>
           </div>
           <div className="rounded-lg border border-border bg-card p-4 h-[380px] flex flex-col items-center justify-center gap-4">
