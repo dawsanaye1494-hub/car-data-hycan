@@ -27,22 +27,22 @@ export function parseLog(text: string, fileName: string): ParsedLog {
   let lastSpeed = -1;
 
   for (const line of text.split("\n")) {
-    const ts = LINE_TS.exec(line);
+    const ts = LINE_TS.exec(line) as string[] | null;
     if (!ts) continue;
     const t = new Date(year, +ts[1] - 1, +ts[2], +ts[3], +ts[4], +ts[5], +ts[6]).getTime();
 
     if (line.includes("reportLocation Location[gps")) {
-      const m = line.match(/gps ([\d.-]+),([\d.-]+).*?alt=([\d.-]+) vel=([\d.eE-]+) bear=([\d.-]+)/);
+      const m = line.match(/gps ([\d.-]+),([\d.-]+).*?alt=([\d.-]+) vel=([\d.eE-]+) bear=([\d.-]+)/) as string[] | null;
       if (m) {
         fixes.push({ t, lat: +m[1], lon: +m[2], alt: +m[3], speedKmh: +m[4] * 3.6, bearing: +m[5] });
       }
       continue;
     }
     if (line.includes("SdvcService: gain is")) {
-      const m = line.match(/speed ([\d.]+)km\/h/);
+      const m = line.match(/speed ([\d.]+)km\/h/) as string[] | null;
       if (m) {
         const kmh = +m[1];
-        if (kmh !== lastSpeed || speeds.length === 0 || t - speeds[speeds.length - 1].t > 5000) {
+        if (kmh !== lastSpeed || speeds.length === 0 || t - speeds[speeds.length - 1]!.t > 5000) {
           speeds.push({ t, kmh });
           lastSpeed = kmh;
         }
@@ -50,7 +50,7 @@ export function parseLog(text: string, fileName: string): ParsedLog {
       continue;
     }
     if (line.includes("setSteeWheel angle =")) {
-      const m = line.match(/angle = (-?\d+)\s+angleDirection = (-?\d+)\s+speed = (-?\d+)/);
+      const m = line.match(/angle = (-?\d+)\s+angleDirection = (-?\d+)\s+speed = (-?\d+)/) as string[] | null;
       if (m) steering.push({ t, angle: +m[1], direction: +m[2], speed: +m[3] });
       continue;
     }
@@ -65,7 +65,7 @@ export function parseLog(text: string, fileName: string): ParsedLog {
   }
 
   const dedupFixes = fixes.filter(
-    (f, i) => i === 0 || f.t - fixes[i - 1].t > 200,
+    (f, i) => i === 0 || f.t - fixes[i - 1]!.t > 200,
   );
   return { fileName, fixes: dedupFixes, speeds, steering, events: events.slice(0, 500) };
 }
@@ -82,7 +82,7 @@ export function haversineKm(a: GpsFix, b: GpsFix) {
 
 export function summarize(p: ParsedLog) {
   let dist = 0;
-  for (let i = 1; i < p.fixes.length; i++) dist += haversineKm(p.fixes[i - 1], p.fixes[i]);
+  for (let i = 1; i < p.fixes.length; i++) dist += haversineKm(p.fixes[i - 1]!, p.fixes[i]!);
   const all = [...p.fixes.map((f) => f.t), ...p.speeds.map((s) => s.t), ...p.steering.map((s) => s.t)];
   const start = all.length ? Math.min(...all) : 0;
   const end = all.length ? Math.max(...all) : 0;

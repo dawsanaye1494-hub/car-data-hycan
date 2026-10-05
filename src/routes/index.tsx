@@ -77,7 +77,7 @@ function Index() {
       ...log.steering.filter((s) => s.angle !== 0).map((s) => ({ t: s.t, kind: "Steering", label: `Wheel ${s.angle}° ${s.direction ? "right" : "left"}` })),
       ...log.events.map((e) => ({ t: e.t, kind: e.kind, label: e.label })),
     ];
-    const moves = log.fixes.filter((f, i) => i > 0 && f.speedKmh > 3 && log.fixes[i - 1].speedKmh <= 3);
+    const moves = log.fixes.filter((f, i) => i > 0 && f.speedKmh > 3 && log.fixes[i - 1]!.speedKmh <= 3);
     moves.forEach((f) => items.push({ t: f.t, kind: "Moving", label: `Started moving at ${f.speedKmh.toFixed(1)} km/h` }));
     return items.sort((a, b) => a.t - b.t).slice(0, 300);
   }, [log]);
@@ -158,7 +158,7 @@ function Index() {
                   {cursorT ? fmtTime(cursorT) : "—"}{cursorFix ? ` · ${cursorFix.lat.toFixed(5)}, ${cursorFix.lon.toFixed(5)} · ${cursorFix.speedKmh.toFixed(1)} km/h` : ""}
                 </span>
               </div>
-              <Slider min={stats.start} max={stats.end} step={1000} value={[cursorT ?? stats.start]} onValueChange={(v) => setCursorT(v[0])} />
+              <Slider min={stats.start} max={stats.end} step={1000} value={[cursorT ?? stats.start]} onValueChange={(v) => setCursorT(v[0] ?? null)} />
             </div>
           )}
 
