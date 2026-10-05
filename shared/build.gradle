@@ -1,0 +1,27 @@
+plugins {
+    id 'com.android.library'
+}
+android {
+    namespace = 'com.shilapi.xcertplay.shared'
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 26
+        targetSdk = 36
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+}
+dependencies {
+    coreLibraryDesugaring libs.desugar.jdk.libs
+    implementation libs.androidx.app
+    implementation libs.bouncycastle
+    implementation libs.jmdns
+    testImplementation libs.junit
+    testImplementation 'org.robolectric:robolectric:4.17'
+}
