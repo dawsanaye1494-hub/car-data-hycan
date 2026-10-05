@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/analyze-trip")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env.LOVABLE_API_KEY;
+        const apiKey = process.env['LOVABLE_API_KEY'];
         if (!apiKey) return Response.json({ error: "AI is not configured." }, { status: 500 });
         let body: { summary?: unknown };
         try {
@@ -25,8 +25,6 @@ export const Route = createFileRoute("/api/analyze-trip")({
           return Response.json({ error: "Trip data missing or too large." }, { status: 400 });
         }
         const { createResponsesCall } = await import("@/lib/ai/responses.server");
-        const { withLovableAiGatewayRunIdHeader, createLovableAiGatewayRunIdFetch } = await import("@/lib/ai/run-id.server");
-        void createLovableAiGatewayRunIdFetch;
         const call = createResponsesCall(
           request,
           { baseURL: "https://ai.gateway.lovable.dev/v1", apiKey, model: "openai/gpt-6-astra" },
@@ -35,7 +33,6 @@ export const Route = createFileRoute("/api/analyze-trip")({
             { role: "user", content: `Trip data:\n${summary}` },
           ],
         );
-        void withLovableAiGatewayRunIdHeader;
         return call.result.toTextStreamResponse();
       },
     },
