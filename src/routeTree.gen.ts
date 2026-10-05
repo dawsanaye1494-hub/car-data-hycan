@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LiveRouteImport } from './routes/live'
 import { Route as ApiAnalyzeTripRouteImport } from './routes/api/analyze-trip'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveRoute = LiveRouteImport.update({
+  id: '/live',
+  path: '/live',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAnalyzeTripRoute = ApiAnalyzeTripRouteImport.update({
@@ -25,27 +31,31 @@ const ApiAnalyzeTripRoute = ApiAnalyzeTripRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/live': typeof LiveRoute
   '/api/analyze-trip': typeof ApiAnalyzeTripRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/live': typeof LiveRoute
   '/api/analyze-trip': typeof ApiAnalyzeTripRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/live': typeof LiveRoute
   '/api/analyze-trip': typeof ApiAnalyzeTripRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/analyze-trip'
+  fullPaths: '/' | '/live' | '/api/analyze-trip'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/analyze-trip'
-  id: '__root__' | '/' | '/api/analyze-trip'
+  to: '/' | '/live' | '/api/analyze-trip'
+  id: '__root__' | '/' | '/live' | '/api/analyze-trip'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LiveRoute: typeof LiveRoute
   ApiAnalyzeTripRoute: typeof ApiAnalyzeTripRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live': {
+      id: '/live'
+      path: '/live'
+      fullPath: '/live'
+      preLoaderRoute: typeof LiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/analyze-trip': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LiveRoute: LiveRoute,
   ApiAnalyzeTripRoute: ApiAnalyzeTripRoute,
 }
 export const routeTree = rootRouteImport
